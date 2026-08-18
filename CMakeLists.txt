@@ -9,3 +9,8 @@ find_package(OpenCV REQUIRED)
 add_executable(armor_detect armor_detect.cpp)
 target_include_directories(armor_detect PRIVATE ${OpenCV_INCLUDE_DIRS})
 target_link_libraries(armor_detect PRIVATE ${OpenCV_LIBS})
+
+#add_executable(threshold_debug threshold_debug.cpp)
+#target_include_directories(threshold_debug PRIVATE ${OpenCV_INCLUDE_DIRS})
+#target_link_libraries(threshold_debug PRIVATE ${OpenCV_LIBS})
+#测试调试inrange的文件

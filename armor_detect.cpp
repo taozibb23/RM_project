@@ -1,9 +1,9 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <cmath>
-// 阈值：trackbar 调参结果（写死）
-int hminb = 72,  sminb = 16,  vminb = 255;
-int hmaxb = 101, smaxb = 69,  vmaxb = 255;
+// 阈值：trackbar 调参结果 不要写死，把全部数据先i塞进来再进行下一步
+int hminb = 8,  sminb = 2,  vminb = 255;
+int hmaxb = 117, smaxb = 37,  vmaxb = 255;
 
 int hminr = 153, sminr = 8,   vminr = 255;
 int hmaxr = 179, smaxr = 61,  vmaxr = 255;
@@ -23,12 +23,13 @@ double normalizeDeg(double angle){//灯带配对
     return angle;
 }
 bool isValidPair(const cv::RotatedRect& a,const cv::RotatedRect& b){
-    auto heightratio = a.size.height/b.size.height;
-    if (heightratio < 0.67 || heightratio > 1.5)return false;//高度比例  if早退模式里面写反条件
-         double a_dir = normalizeDeg(a.angle + 90);
-         double b_dir = normalizeDeg(b.angle + 90);
-         if(std::abs(a_dir - b_dir) > 15)return false;
-            if(std::abs(normalizeDeg(a.angle) - normalizeDeg(b.angle)) > 15)return false; //绝对值  std  abs
+     auto heightratio = a.size.height/b.size.height;
+     if (heightratio < 0.67 || heightratio > 1.5)return false;//高度比例  if早退模式里面写反条件
+          double a_dir = a.angle + 90;
+          double b_dir = b.angle + 90;//要注意归一化的hi时候以什么为基准，绕圈和翻折
+          double dir_dif = std::abs(normalizeDeg(a_dir - b_dir));
+          if (dir_dif > 90)dir_dif = 180 - dir_dif;
+          if(dir_dif > 15)return false;//绝对值  std  abs
             std::cout<<"angle : "<<a.angle<<"   "<<b.angle<<std::endl;
             auto centerspacing_x = a.center.x - b.center.x;//间距是负数怎么办
             auto centerspacing_y = a.center.y - b.center.y;
@@ -96,8 +97,8 @@ int main(int argc, char* argv[]) {
     
     for(int i = 0;i <contours.size(); i++){
         double area = cv::contourArea(contours[i]);
-        std::cout<<"contours  :  "<<i<<"area  :  "<<area<<std::endl;
-        if (cv::contourArea(contours[i]) > 30 && cv::contourArea(contours[i]) < 1000){
+        //std::cout<<"contours  :  "<<i<<"area  :  "<<area<<std::endl;
+        if (cv::contourArea(contours[i]) > 30){
             cv::RotatedRect rRect = cv::minAreaRect(contours[i]);
             double h = rRect.size.height, w = rRect.size.width;
             if(h < w)std::swap(h,w);
@@ -115,8 +116,8 @@ int main(int argc, char* argv[]) {
             }
             cv::polylines(img,boxPtsInt,true,cv::Scalar(0,255,0), 2);
             if(lightBars.empty()){std::cout<<" 没有检测到灯带 "<<std::endl;}
-            std::cout<<"灯带角度"<<rRect.angle<<"灯带中心"<<rRect.center<<std::endl;
-            std::cout<<"检测到灯带： "<<lightBars.size() << " 个 "<<std::endl;
+            std::cout<<"灯带角度"<<(rRect.angle + 90)<<"灯带中心"<<rRect.center<<std::endl;//angle加90  全部都以长边为标准
+            //std::cout<<"检测到灯带： "<<lightBars.size() << " 个 "<<std::endl;
         }
      
     }
