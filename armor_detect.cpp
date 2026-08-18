@@ -8,8 +8,11 @@
 int hminb = 64,  sminb = 5,  vminb = 255;
 int hmaxb = 140, smaxb = 46,  vmaxb = 255;
 //红色有两个目前先写一个
-int hminr = 153, sminr = 8,   vminr = 255;
-int hmaxr = 179, smaxr = 61,  vmaxr = 255;
+int hminr = 2, sminr = 16,   vminr = 219;
+int hmaxr = 179, smaxr = 169,  vmaxr = 255;
+
+int hminr2 = 0,  sminr2 = 122, vminr2 = 74;
+int hmaxr2 = 10, smaxr2 = 255, vmaxr2 = 158;
 
 // 鼠标采样：点图打印该像素 HSV（不点不影响运行）
 void onMouse(int event, int x, int y, int flags, void* userdata) {
@@ -87,14 +90,20 @@ int main(int argc, char* argv[]) {
     int hmax = usedRed ? hmaxr : hmaxb;
     int smax = usedRed ? smaxr : smaxb;
     int vmax = usedRed ? vmaxr : vmaxb;
-
+ 
     cv::Mat imgHSV, imgmask;
     cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7,7));
     cv::cvtColor(img, imgHSV, cv::COLOR_BGR2HSV);
-
-    cv::Scalar lower(hmin, smin, vmin);   
-    cv::Scalar upper(hmax, smax, vmax);
-    cv::inRange(imgHSV, lower, upper, imgmask);
+    if(usedRed){
+        cv::Mat mask1, mask2;
+        cv::inRange(imgHSV, cv::Scalar(hminr2, sminr, vminr), cv::Scalar(hmaxr2, smaxr, vmaxr), mask1);
+        cv::inRange(imgHSV, cv::Scalar(hminr, sminr, vminr), cv::Scalar(hmaxr, smaxr, vmaxr), mask2);
+        cv::bitwise_or(mask1, mask2, imgmask);
+    }else{
+            cv::Scalar lower(hmin, smin, vmin);   
+            cv::Scalar upper(hmax, smax, vmax);
+            cv::inRange(imgHSV, lower, upper, imgmask);
+         }
     cv::morphologyEx(imgmask, imgmask, cv::MORPH_CLOSE, kernel);
 
     std::vector<std::vector<cv::Point>> contours;

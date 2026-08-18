@@ -10,6 +10,8 @@
 int hmin=0, smin=0, vmin=0;
 int hmax=179, smax=255, vmax=255;
 
+
+
 int main(int argc,char* argv[]){
     if(argc < 3){
         std::cout << "用法： ./threshold_debug <图片路径> <red|blue>"<< std::endl;
@@ -23,8 +25,11 @@ int main(int argc,char* argv[]){
   // 红色是两段 H：0~10 和 160~179；蓝色一段。这里先用单段，红色问题后面处理
     if (usedRed) { hmin = 160; hmax = 179; }
     else         { hmin = 90;  hmax = 120; }
-
-        cv::namedWindow("TrackBars", cv::WINDOW_NORMAL);
+    
+    int rHmin2 = 160, rHmax2 = 179;
+    cv::namedWindow("TrackBars", cv::WINDOW_NORMAL);
+         cv::createTrackbar("H2 min", "TrackBars", &rHmin2, 179);//red
+         cv::createTrackbar("H2 max", "TrackBars", &rHmax2, 179);//red
     cv::createTrackbar("H min", "TrackBars", &hmin, 179);
     cv::createTrackbar("H max", "TrackBars", &hmax, 179);
     cv::createTrackbar("S min", "TrackBars", &smin, 255);
@@ -33,11 +38,18 @@ int main(int argc,char* argv[]){
     cv::createTrackbar("V max", "TrackBars", &vmax, 255);
 
     while (true) {
-        cv::Mat hsv, mask;
+        cv::Mat mask1, mask2, mask, hsv;
         cv::cvtColor(img, hsv, cv::COLOR_BGR2HSV);
+        if(usedRed){
+            cv::inRange(hsv, cv::Scalar(hmin, smin, vmin),cv::Scalar(hmax, smax, vmax), mask1);
+            cv::inRange(hsv, cv::Scalar(rHmin2, smin, vmin),cv::Scalar(rHmax2, smax, vmax), mask2);;
+        
+            cv::bitwise_or(mask1, mask2, mask);//合并红色的跨色域
+        }else{
         cv::inRange(hsv, cv::Scalar(hmin, smin, vmin),
                           cv::Scalar(hmax, smax, vmax), mask);
-        // 形态学：调参时也能看效果
+        }
+                          // 形态学：调参时也能看效果
         cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7,7));
         cv::morphologyEx(mask, mask, cv::MORPH_CLOSE, kernel);
 
@@ -45,11 +57,17 @@ int main(int argc,char* argv[]){
         cv::imshow("mask", mask);
         int key = cv::waitKey(30);
         if (key == 'q') break;                    // q 退出
-        if (key == 's') {                          // s 打印当前参数（存下来）
-            std::cout << "当前: H " << hmin << "~" << hmax
-                      << " S " << smin << "~" << smax
-                      << " V " << vmin << "~" << vmax << std::endl;
-        }
+       if (key == 's') {
+    if (usedRed)
+        std::cout << "当前: H " << hmin << "~" << hmax
+                  << " H2 " << rHmin2 << "~" << rHmax2
+                  << " S " << smin << "~" << smax
+                  << " V " << vmin << "~" << vmax << std::endl;
+    else
+        std::cout << "当前: H " << hmin << "~" << hmax
+                  << " S " << smin << "~" << smax
+                  << " V " << vmin << "~" << vmax << std::endl;
+  }
     }
     return 0;
 }
