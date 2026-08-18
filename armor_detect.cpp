@@ -1,10 +1,13 @@
 #include <opencv2/opencv.hpp>
 #include <iostream>
 #include <cmath>
-// 阈值：trackbar 调参结果 不要写死，把全部数据先i塞进来再进行下一步
-int hminb = 8,  sminb = 2,  vminb = 255;
-int hmaxb = 117, smaxb = 37,  vmaxb = 255;
+#include <algorithm>
 
+// 阈值：trackbar 调参结果 不要写死，把全部数据先i塞进来再进行下一步
+//蓝色
+int hminb = 64,  sminb = 5,  vminb = 255;
+int hmaxb = 140, smaxb = 46,  vmaxb = 255;
+//红色有两个目前先写一个
 int hminr = 153, sminr = 8,   vminr = 255;
 int hmaxr = 179, smaxr = 61,  vmaxr = 255;
 
@@ -24,18 +27,23 @@ double normalizeDeg(double angle){//灯带配对
 }
 bool isValidPair(const cv::RotatedRect& a,const cv::RotatedRect& b){
      auto heightratio = a.size.height/b.size.height;
-     if (heightratio < 0.67 || heightratio > 1.5)return false;//高度比例  if早退模式里面写反条件
+     //条件1 高度比例
+     if (heightratio < 0.67 || heightratio > 1.5){
+          std::cout<<"高度比例不正确 "<<"位置在 :"<<a.center<<"  "<<b.center<<std::endl;
+          return false;}//高度比例  if早退模式里面写反条件
+          
           double a_dir = a.angle + 90;
           double b_dir = b.angle + 90;//要注意归一化的hi时候以什么为基准，绕圈和翻折
           double dir_dif = std::abs(normalizeDeg(a_dir - b_dir));
           if (dir_dif > 90)dir_dif = 180 - dir_dif;
+    //条件2 两个灯带的长边 角度相差在一定范围内
           if(dir_dif > 15)return false;//绝对值  std  abs
-            std::cout<<"angle : "<<a.angle<<"   "<<b.angle<<std::endl;
+            std::cout<<"angle : "<<(a.angle + 90)<<"   "<<(b.angle + 90)<<std::endl;
             auto centerspacing_x = a.center.x - b.center.x;//间距是负数怎么办
             auto centerspacing_y = a.center.y - b.center.y;
-            auto centerdis = std::hypot(centerspacing_x,centerspacing_y);
-            //计算间距
+            auto centerdis = std::hypot(centerspacing_x,centerspacing_y);//计算间距
             auto averageheight = (a.size.height + b.size.height) / 2 ;
+    //条件3 组合起来的矩形用center连线和height 矩形的比例在一定范围
             if(4 < centerdis / averageheight || centerdis / averageheight < 1.5)return false;//中心间距除以平均u高度来筛选
                auto dx = a.center.x - b.center.x;
                auto dy = a.center.y - b.center.y;
@@ -51,7 +59,8 @@ bool isValidPair(const cv::RotatedRect& a,const cv::RotatedRect& b){
                auto bar_center_dif = two_bar_deg - center_angle_deg;
                bar_center_dif = normalizeDeg(bar_center_dif);
                auto deviation = std::abs(std::abs(bar_center_dif) - 90.0);//与垂直的偏差
-               float tolerance_deg = 20.0;//+-  相差范围是20
+               float tolerance_deg = 20.0;//+-  误差范围是20
+    //条件4  中心center连线与灯带垂直 误差在一定范围内                
                     if(deviation > tolerance_deg)return false;//中心连线和灯带的角度差
                         std::cout<<"配对成功"<<std::endl;
                         return true;                                                
@@ -123,6 +132,18 @@ int main(int argc, char* argv[]) {
     }
            //----------------------筛选灯带数量----------------
             std::cout<<"正在配对灯带中....."<<std::endl;
+            std::sort(lightBars.begin(), lightBars.end(),
+                    [](const cv::RotatedRect& a, const cv::RotatedRect& b){
+                        return a.center.x < b.center.x;
+                    });
+            //筛选出角度垂直一些的灯带
+            for(auto it = lightBars.begin(); it != lightBars.end();){
+                double longdir = normalizeDeg(it->angle + 90);//规划一
+                if(std::abs(longdir - 110.0) > 55)
+                    it = lightBars.erase(it);
+                else
+                    ++it;
+            }
             for(std::size_t i = 0; i < lightBars.size(); i++){
                 for(std::size_t j = i + 1 ; j < lightBars.size(); j++){//i为第一个e灯带j为第二个灯带
                     if(isValidPair(lightBars[i],lightBars[j])){
