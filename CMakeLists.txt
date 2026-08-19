@@ -14,7 +14,7 @@ option(BUILD_THRESHOLD_DEBUG "是否编译调试颜色工具 threshold_debug" ON
 
 #主程序
 if(BUILD_ARMOR_DETECT)
-    add_executable(armor_detect armor_detect.cpp)
+    add_executable(armor_detect armor_detect.cpp armor_algo.cpp)
     target_include_directories(armor_detect PRIVATE ${OpenCV_INCLUDE_DIRS})
     target_link_libraries(armor_detect PRIVATE ${OpenCV_LIBS})
 endif()
