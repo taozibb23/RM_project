@@ -4,15 +4,18 @@
 #include <algorithm>
 
 // 阈值：trackbar 调参结果 不要写死，把全部数据先i塞进来再进行下一步
-//蓝色
+// ===== 阈值参数（threshold_debug 实测 8/19）=====
+// 蓝色（rb 交战图实测：H 79~92，取原代码 64~140 保留余量）
 int hminb = 64,  sminb = 5,  vminb = 255;
 int hmaxb = 140, smaxb = 46,  vmaxb = 255;
-//红色有两个目前先写一个
-int hminr = 2, sminr = 16,   vminr = 219;
-int hmaxr = 179, smaxr = 169,  vmaxr = 255;
 
-int hminr2 = 0,  sminr2 = 122, vminr2 = 74;
-int hmaxr2 = 10, smaxr2 = 255, vmaxr2 = 158;
+// 红色段1：主段 160~179（数据说红色 77~97% 落在这）
+int hminr = 160, sminr = 10, vminr = 255;
+int hmaxr = 179, smaxr = 71, vmaxr = 255;
+
+// 红色段2：辅段 0~30（换光照红色可能回到 0 附近）
+int hminr2 = 0,  sminr2 = 10, vminr2 = 255;
+int hmaxr2 = 30, smaxr2 = 71, vmaxr2 = 255;
 
 // 鼠标采样：点图打印该像素 HSV（不点不影响运行）
 void onMouse(int event, int x, int y, int flags, void* userdata) {
