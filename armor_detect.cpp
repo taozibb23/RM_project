@@ -13,7 +13,12 @@ int hminr = 0, sminr = 11,   vminr = 255;
 int hmaxr = 26, smaxr = 71,  vmaxr = 255;
 int hminr2 = 0,  sminr2 = 11, vminr2 = 255;
 int hmaxr2 = 10, smaxr2 = 71, vmaxr2 = 255;
-
+//装甲板类型
+enum class ArmorType{
+    SMALL,
+    BIG,
+    UNKNOWN
+};
 // 鼠标采样：点图打印该像素 HSV（不点不影响运行）
 void onMouse(int event, int x, int y, int flags, void* userdata) {
     if (event == cv::EVENT_LBUTTONDOWN) {
@@ -34,7 +39,7 @@ double getBarDir(const cv::RotatedRect& r){
     else
         return r.angle + 90;
 }
-bool isValidPair(const cv::RotatedRect& a,const cv::RotatedRect& b){
+bool isValidPair(const cv::RotatedRect& a,const cv::RotatedRect& b, cv::RotatedRect armor_out){
      auto heightratio = a.size.height/b.size.height;
      //条件1 高度比例
      if (heightratio < 0.67 || heightratio > 1.5){
@@ -73,9 +78,18 @@ bool isValidPair(const cv::RotatedRect& a,const cv::RotatedRect& b){
                     if(deviation > tolerance_deg)return false;//中心连线和灯带的角度差
                         std::cout<<"配对成功"<<std::endl;
                         return true;                                                
-   
+        
 }
-
+ArmorType classifyArmor(const cv::RotatedRect& armor){
+    auto armor_ratio = armor.size.width / armor.size.height;
+    if(armor_ratio > 3.0){
+        return ArmorType::BIG;
+    }
+    if(armor_ratio < 2.5){
+        return ArmorType::SMALL;
+    }
+    return ArmorType::SMALL;
+}
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
@@ -159,11 +173,18 @@ int main(int argc, char* argv[]) {
                 else
                     ++it;
             }
+            cv::RotatedRect armor;//接受配对完的装甲板
             for(std::size_t i = 0; i < lightBars.size(); i++){
                 for(std::size_t j = i + 1 ; j < lightBars.size(); j++){//i为第一个e灯带j为第二个灯带
-                    if(isValidPair(lightBars[i],lightBars[j])){
-                        //配对成功
+                    if(isValidPair(lightBars[i],lightBars[j],armor)){//配对成功
                         std::cout<<"配对 成功 "<<i<<" + "<<j<<std::endl;
+                        ArmorType armortype = classifyArmor(armor);
+                        switch (armortype)
+                        {
+                        case ArmorType::BIG:   std::cout<<"装甲板类型:BIG"  <<std::endl;break;
+                        case ArmorType::SMALL: std::cout<<"装甲板类型:SMALL"<<std::endl;break;
+                        default:               std::cout<<"装甲板类型:UNKNOWN"<<std::endl;break;    
+                        }
                         cv::Mat mi,mj;
                         cv::boxPoints(lightBars[i],mi);
                         cv::boxPoints(lightBars[j],mj);//获取灯带的四个点
