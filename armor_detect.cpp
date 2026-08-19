@@ -4,18 +4,15 @@
 #include <algorithm>
 
 // 阈值：trackbar 调参结果 不要写死，把全部数据先i塞进来再进行下一步
-// ===== 阈值参数（threshold_debug 实测 8/19）=====
-// 蓝色（rb 交战图实测：H 79~92，取原代码 64~140 保留余量）
-int hminb = 64,  sminb = 5,  vminb = 255;
-int hmaxb = 140, smaxb = 46,  vmaxb = 255;
-
-// 红色段1：主段 160~179（数据说红色 77~97% 落在这）
-int hminr = 160, sminr = 10, vminr = 255;
-int hmaxr = 179, smaxr = 71, vmaxr = 255;
-
-// 红色段2：辅段 0~30（换光照红色可能回到 0 附近）
-int hminr2 = 0,  sminr2 = 10, vminr2 = 255;
-int hmaxr2 = 30, smaxr2 = 71, vmaxr2 = 255;
+// ===== 阈值参数
+//蓝色
+int hminb = 88,  sminb = 9,  vminb = 255;
+int hmaxb = 101, smaxb = 49,  vmaxb = 255;
+//红色
+int hminr = 0, sminr = 11,   vminr = 255;
+int hmaxr = 26, smaxr = 71,  vmaxr = 255;
+int hminr2 = 0,  sminr2 = 11, vminr2 = 255;
+int hmaxr2 = 10, smaxr2 = 71, vmaxr2 = 255;
 
 // 鼠标采样：点图打印该像素 HSV（不点不影响运行）
 void onMouse(int event, int x, int y, int flags, void* userdata) {
@@ -31,15 +28,21 @@ double normalizeDeg(double angle){//灯带配对
     while(angle < -180.0) angle += 360.0;
     return angle;
 }
+double getBarDir(const cv::RotatedRect& r){
+    if(r.size.width >= r.size.height)
+        return r.angle;
+    else
+        return r.angle + 90;
+}
 bool isValidPair(const cv::RotatedRect& a,const cv::RotatedRect& b){
      auto heightratio = a.size.height/b.size.height;
      //条件1 高度比例
      if (heightratio < 0.67 || heightratio > 1.5){
           std::cout<<"高度比例不正确 "<<"位置在 :"<<a.center<<"  "<<b.center<<std::endl;
           return false;}//高度比例  if早退模式里面写反条件
-          
-          double a_dir = a.angle + 90;
-          double b_dir = b.angle + 90;//要注意归一化的hi时候以什么为基准，绕圈和翻折
+          double a_dir = normalizeDeg(getBarDir(a));
+          double b_dir = normalizeDeg(getBarDir(b));
+          //要注意归一化的hi时候以什么为基准，绕圈和翻折
           double dir_dif = std::abs(normalizeDeg(a_dir - b_dir));
           if (dir_dif > 90)dir_dif = 180 - dir_dif;
     //条件2 两个灯带的长边 角度相差在一定范围内
