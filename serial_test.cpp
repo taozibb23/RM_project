@@ -4,7 +4,26 @@
 #include <termios.h>
 #include <cstring>
 
-int main(){
+int main(int argc, char* argv[]){
+    if(argc < 3){
+        std::cout<<"用法 :" <<argv[0]<<"<x 和 y的值>" <<std::endl;
+        return 1;
+    }
+    unsigned int value_x = std::stoul(argv[1],nullptr,0);
+    unsigned int value_y = std::stoul(argv[2],nullptr,0);
+
+    unsigned char frame_input[4];
+    frame_input[0] = value_x & 0xFF;
+    frame_input[1] = (value_x >> 8) & 0xFF;
+    frame_input[2] = value_y & 0xFF;
+    frame_input[3] = (value_y >> 8) & 0xFF;
+
+    std::cout<<"输入的数值: 0x"<<std::hex<< value_x <<value_y << std::endl;
+    std::cout<<"frame_output:";
+    for(int i = 0;i < 4;i++){
+        std::cout<<"0x"<<std::hex<<(int)frame_input[i]<<"  ";
+    }
+    std::cout<< std::endl;
     //1.打开文件(串口)
     //O_RDWR = 可读可写，O_NOCTTY = 不占用终端控制
     int fd = open("/dev/pts/2", O_RDWR | O_NOCTTY);
@@ -30,11 +49,12 @@ int main(){
     unsigned char frame[7];
     frame[0] = 0xA5;        //帧头1
     frame[1] = 0x5A;        //帧头2
-    frame[2] = 0x01;        //x高字节
-    frame[3] = 0x40;        //x低字节
-    frame[4] = 0x01;        //y高字节
-    frame[5] = 0x2E;        //y低字节
-    frame[6] = (0xA5 + 0x5A + 0x01 + 0x40 + 0x01 + 0x2E) & 0xFF; //取低  校验位 累加和
+    //前面接受的是从低字节到高字节 到这里输出帧要一样也就是 把前面变成先高后低
+    frame[2] = frame_input[1];        //x高字节
+    frame[3] = frame_input[0];        //x低字节
+    frame[4] = frame_input[3];        //y高字节
+    frame[5] = frame_input[2];        //y低字节
+    frame[6] = (frame[0]+frame[1]+frame[2]+frame[3]+frame[4]+frame[5]) & 0xFF; //取低  校验位 累加和
     std::cout<<"校验和: 0x" <<std::hex<<(int)frame[6] <<std::dec<<std::endl;
 
     //发送 write 写文件
