@@ -4,28 +4,29 @@
 #include <algorithm>
 
 #include "armor_type.hpp"
+#include "armor_algo.hpp"
 
-double normalizeDeg(double angle){//灯带配对
+double ArmorDetect::normalizeDeg(double angle){//灯带配对
     while(angle > 180.0) angle -= 360.0;
     while(angle < -180.0) angle += 360.0;
     return angle;
 }
-double getBarDir(const cv::RotatedRect& r){
+double ArmorDetect::getBarDir(const cv::RotatedRect& r){
     if(r.size.width >= r.size.height)
         return r.angle;
     else
         return r.angle + 90;
 }
-bool isValidPair(const cv::RotatedRect& a,const cv::RotatedRect& b, cv::RotatedRect armor_out){
+bool ArmorDetect::isValidPair(const cv::RotatedRect& a,const cv::RotatedRect& b, cv::RotatedRect& armor_out){
      auto heightratio = a.size.height/b.size.height;
      //条件1 高度比例
      if (heightratio < 0.67 || heightratio > 1.5){
           std::cout<<"高度比例不正确 "<<"位置在 :"<<a.center<<"  "<<b.center<<std::endl;
           return false;}//高度比例  if早退模式里面写反条件
-          double a_dir = normalizeDeg(getBarDir(a));
-          double b_dir = normalizeDeg(getBarDir(b));
+          double a_dir = ArmorDetect::normalizeDeg(getBarDir(a));
+          double b_dir = ArmorDetect::normalizeDeg(getBarDir(b));
           //要注意归一化的hi时候以什么为基准，绕圈和翻折
-          double dir_dif = std::abs(normalizeDeg(a_dir - b_dir));
+          double dir_dif = std::abs(ArmorDetect::normalizeDeg(a_dir - b_dir));
           if (dir_dif > 90)dir_dif = 180 - dir_dif;
     //条件2 两个灯带的长边 角度相差在一定范围内
           if(dir_dif > 15)return false;//绝对值  std  abs
@@ -45,19 +46,26 @@ bool isValidPair(const cv::RotatedRect& a,const cv::RotatedRect& b, cv::RotatedR
                auto angle_a = (a.angle + 90.0); //angle是nn短边的夹角+90nh变成aa长边了
                auto angle_b = (b.angle + 90.0);
                auto two_bar_deg = (angle_a + angle_b) / 2;//取得平均值
-               two_bar_deg = normalizeDeg(two_bar_deg);
-               center_angle_deg = normalizeDeg(center_angle_deg);
+               two_bar_deg = ArmorDetect::normalizeDeg(two_bar_deg);
+               center_angle_deg = ArmorDetect::normalizeDeg(center_angle_deg);
                auto bar_center_dif = two_bar_deg - center_angle_deg;
-               bar_center_dif = normalizeDeg(bar_center_dif);
+               bar_center_dif = ArmorDetect::normalizeDeg(bar_center_dif);
                auto deviation = std::abs(std::abs(bar_center_dif) - 90.0);//与垂直的偏差
                float tolerance_deg = 20.0;//+-  误差范围是20
     //条件4  中心center连线与灯带垂直 误差在一定范围内                
                     if(deviation > tolerance_deg)return false;//中心连线和灯带的角度差
                         std::cout<<"配对成功"<<std::endl;
+                        std::vector<cv::Point2f> allPts;
+                        cv::Point2f pts1[4],pts2[4];
+                        for(int i = 0; i < 4; i++){
+                            allPts.push_back(pts1[i]);
+                            allPts.push_back(pts2[i]);
+                        }
+                            armor_out = cv::minAreaRect(allPts);
                         return true;                                                
         
 }
-ArmorType classifyArmor(const cv::RotatedRect& armor){
+ArmorType ArmorDetect::classifyArmor(const cv::RotatedRect& armor){
     auto armor_ratio = armor.size.width / armor.size.height;
     if(armor_ratio > 3.0){
         return ArmorType::BIG;
