@@ -2,7 +2,6 @@
 
 enum class ArmorType {
     SMALL,      // 小装甲板
-    MEDIUM,     // 中
     BIG,        // 大
     UNKNOWN     // 判断不了
 };
