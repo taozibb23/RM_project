@@ -65,15 +65,3 @@ void sendFrame(int fd,int x, int y, int type){
     close(fd);
 
 }
-
-int main(int argc, char* argv[]) {
-    if (argc < 3) {
-        std::cout << "用法: " << argv[0] << " <x> <y>" << std::endl;
-        return 1;
-    }
-    int fd = openSerial("/dev/pts/2");
-    if (fd < 0) return 1;
-    sendFrame(fd, std::stoi(argv[1]), std::stoi(argv[2]), 0);
-    close(fd);
-    return 0;
-}

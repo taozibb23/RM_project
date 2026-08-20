@@ -55,13 +55,19 @@ bool ArmorDetect::isValidPair(const cv::RotatedRect& a,const cv::RotatedRect& b,
     //条件4  中心center连线与灯带垂直 误差在一定范围内                
                     if(deviation > tolerance_deg)return false;//中心连线和灯带的角度差
                         std::cout<<"配对成功"<<std::endl;
+    //配对的装甲板整合
                         std::vector<cv::Point2f> allPts;
-                        cv::Point2f pts1[4],pts2[4];
-                        for(int i = 0; i < 4; i++){
-                            allPts.push_back(pts1[i]);
-                            allPts.push_back(pts2[i]);
+                        cv::Mat ma,mb;
+                        cv::boxPoints(a,ma);
+                        cv::boxPoints(b,mb);
+                        for(int i = 0; i < ma.rows; i++){
+                            allPts.push_back(cv::Point2f(ma.at<float>(i,0),ma.at<float>(i,1)));
+                        }
+                        for(int i = 0; i < mb.rows; i++){
+                            allPts.push_back(cv::Point2f(mb.at<float>(i,0),mb.at<float>(i,1)));
                         }
                             armor_out = cv::minAreaRect(allPts);
+                            //返回出来的armor是合并过的了
                         return true;                                                
         
 }

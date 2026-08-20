@@ -5,6 +5,7 @@
 
 #include "armor_type.hpp"
 #include "armor_algo.hpp"
+#include "serial.hpp"
 // 阈值：trackbar 调参结果 不要写死，把全部数据先i塞进来再进行下一步
 // ===== 阈值参数
 //蓝色
@@ -38,6 +39,8 @@ int main(int argc, char* argv[]) {
         std::cout << "img get error: " << argv[1] << std::endl;
         return 1;
     }
+
+    int serialFd = openSerial("/dev/pts/2"); //根据实际串口参数不对的话o要改完u保存重新编译
 
     bool usedRed = (argc >= 3 && std::string(argv[2]) == "red");
     int hmin = usedRed ? hminr : hminb;
@@ -131,6 +134,12 @@ int main(int argc, char* argv[]) {
                             armorPtsInt.push_back(cv::Point(cvRound(x), cvRound(y)));
                         }
                         cv::polylines(img, armorPtsInt, true, cv::Scalar(0,255,0), 2, cv::LINE_AA);
+
+                        int send_x = (int)armor.center.x;
+                        int send_y = (int)armor.center.y;
+                        int send_type = (armortype == ArmorType::BIG) ? 1 : 0;//BIG就是1  SMALL就是0
+                        sendFrame(serialFd, send_x, send_y, send_type);
+
                     }else std::cout<<"配对失败"<<std::endl;
 
                 }
