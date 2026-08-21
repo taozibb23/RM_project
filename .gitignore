@@ -1,1 +1,6 @@
 build/
+*.o
+*.out
+serial_test
+angle_test2
+*.log
