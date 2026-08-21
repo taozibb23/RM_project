@@ -2,6 +2,10 @@
 #include <iostream>
 #include <cmath>
 #include <algorithm>
+#include <fcntl.h> 
+#include <unistd.h>
+#include <termios.h>
+#include <cstring>
 
 #include "armor_type.hpp"
 #include "armor_algo.hpp"
@@ -29,18 +33,21 @@ void onMouse(int event, int x, int y, int flags, void* userdata) {
 }
 
 int main(int argc, char* argv[]) {
+    
     if (argc < 2) {
         std::cout << "用法: ./armor_detect <图片路径>" << std::endl;
         return 1;
     }
+
+    int serialFd = openSerial("/dev/pts/2"); //根据实际串口参数不对的话o要改完u保存重新编译
+
+while(true){
     cv::Mat img = cv::imread(argv[1]);
 
     if (img.empty()) {
         std::cout << "img get error: " << argv[1] << std::endl;
         return 1;
     }
-
-    int serialFd = openSerial("/dev/pts/2"); //根据实际串口参数不对的话o要改完u保存重新编译
 
     bool usedRed = (argc >= 3 && std::string(argv[2]) == "red");
     int hmin = usedRed ? hminr : hminb;
@@ -49,9 +56,13 @@ int main(int argc, char* argv[]) {
     int hmax = usedRed ? hmaxr : hmaxb;
     int smax = usedRed ? smaxr : smaxb;
     int vmax = usedRed ? vmaxr : vmaxb;
+
     ArmorDetect armordetect;
     cv::Mat imgHSV, imgmask;
     cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(7,7));
+    
+        double t0 = cv::getTickCount();  //帧开始的时间
+
     cv::cvtColor(img, imgHSV, cv::COLOR_BGR2HSV);
     if(usedRed){
         cv::Mat mask1, mask2;
@@ -148,11 +159,20 @@ int main(int argc, char* argv[]) {
 
        
     
-   
-     cv::imshow("img", img);
-     cv::setMouseCallback("img", onMouse, &imgHSV);
-     cv::imshow("imgmask", imgmask);
-     cv::waitKey(0);
-     return 0;
+    double t1 = cv::getTickCount();
+    double fps = cv::getTickFrequency() / (t1 - t0);//计算帧率
+    std::cout<<"FPS:"<<fps<<std::endl;
+    std::string fpsText = "FPS:" + std::to_string(static_cast<int>(fps));
+    cv::putText(img,fpsText,cv::Point(10,30),cv::FONT_HERSHEY_SIMPLEX,0.8,cv::Scalar(0,255,0),2,cv::LINE_AA);
+    cv::imshow("img", img);
+    cv::setMouseCallback("img", onMouse, &imgHSV);
+     
+    cv::imshow("imgmask", imgmask);
 
+     
+     if(cv::waitKey(1) == 'q')break;  //q推出
+
+    }//while的
+    close(serialFd);
+    return 0;
 }

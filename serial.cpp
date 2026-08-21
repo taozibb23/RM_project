@@ -62,6 +62,5 @@ void sendFrame(int fd,int x, int y, int type){
     int n = write(fd, frame, 7);
     std::cout<< "发送" <<n<<"字节"<<std::endl;
 
-    close(fd);
 
 }
