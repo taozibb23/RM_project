@@ -81,3 +81,14 @@ ArmorType ArmorDetect::classifyArmor(const cv::RotatedRect& armor){
     }
     return ArmorType::SMALL;
 }
+
+double ArmorDetect::getDistance(const cv::RotatedRect& armor)const{
+
+        const double FOCAL = 500.0; //焦距500mm
+        const double ARMOR_WIDTH = 132.0; //装甲板的宽度
+        double w = armor.size.width;//装甲板像素宽度
+        if(w < armor.size.height) w = armor.size.height;
+        return FOCAL * ARMOR_WIDTH / w;        
+
+}
+

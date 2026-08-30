@@ -150,6 +150,9 @@ while(true){
                         int send_y = (int)armor.center.y;
                         int send_type = (armortype == ArmorType::BIG) ? 1 : 0;//BIG就是1  SMALL就是0
                         sendFrame(serialFd, send_x, send_y, send_type);
+                        
+                        double dist = armordetect.getDistance(armor);
+                        std::cout<<"距离:"<<dist<<"mm"<<std::endl;
 
                     }else std::cout<<"配对失败"<<std::endl;
 
